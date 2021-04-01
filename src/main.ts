@@ -2,6 +2,8 @@ import * as core from "@actions/core";
 import * as tc from "@actions/tool-cache";
 import * as github from "@actions/github";
 import * as os from "os";
+import * as fs from "fs";
+import * as path from "path"
 
 const mkdirp = require("mkdirp-promise");
 
@@ -64,7 +66,7 @@ async function run() {
             })
         }
 
-        let re = new RegExp(`${osPlatform}.${osPlatform == "windows" ? "*zip" : "*tar.gz"}`)
+        let re = new RegExp(`${osPlatform}-amd64`)
         let asset = getReleaseUrl.data.assets.find(obj => {
             return re.test(obj.name)
         })
@@ -80,10 +82,12 @@ async function run() {
 
         core.info(`Downloading ${project} from ${url}`)
         const binPath = await tc.downloadTool(url);
-        let extractedPath = await tc.extractTar(binPath);
-        core.info(`Successfully extracted ${project} to ${extractedPath}`)
+	fs.chmodSync(`${binPath}`, '755');
+        core.info(`Successfully chmodded ${binPath}`)
+	fs.rename( binPath, '/tmp/kubecfg',
+		  () => { console.log("\nFile Renamed! Find kubecfg at /tmp/kubecfg\n") })
 
-        core.addPath(extractedPath);
+        // core.addPath(path.basename(binPath));
     } catch (error) {
         core.setFailed(error.message);
     }
